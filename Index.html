@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AztecCraft 3D: Empire Edition</title>
+    <title>AztecCraft 3D: Survival & Empires</title>
     <style>
-        * { touch-action: manipulation; box-sizing: border-box; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #000; color: white; user-select: none; }
+        * { touch-action: manipulation; box-sizing: border-box; user-select: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #000; color: white; }
         
         #login-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -17,35 +17,48 @@
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 15px; }
         button { background: #d9534f; color: white; font-weight: bold; cursor: pointer; }
 
-        /* UI y Crosshair */
+        /* Crosshair */
         #crosshair {
             position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
             transform: translate(-50%, -50%); pointer-events: none; z-index: 20;
         }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.8); }
         #crosshair::before { top: 5px; left: 0; width: 12px; height: 2px; }
         #crosshair::after { top: 0; left: 5px; width: 2px; height: 12px; }
 
-        #hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 13px; pointer-events: none; }
+        #hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 12px; pointer-events: none; }
         
         /* Hotbar de Inventario */
         #inventory {
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 6px; border-radius: 8px; z-index: 20;
+            display: flex; gap: 4px; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 8px; z-index: 20;
         }
-        .slot { width: 50px; height: 50px; border: 2px solid #aaa; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; background: rgba(0,0,0,0.5); }
+        .slot { width: 48px; height: 48px; border: 2px solid #666; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; cursor: pointer; background: rgba(0,0,0,0.5); }
         .slot.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700; background: rgba(255,215,0,0.2); }
 
-        /* Controles Táctiles Celular */
-        .touch-btn {
-            position: absolute; z-index: 20; background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; color: white; user-select: none;
+        /* Zonas de Control Touch */
+        #touch-camera-zone { position: absolute; top: 0; right: 0; width: 55%; height: 70%; z-index: 5; }
+        
+        /* D-Pad de Movimiento (Izquierda) */
+        #dpad { position: absolute; bottom: 80px; left: 15px; width: 120px; height: 120px; z-index: 20; }
+        .dbtn { position: absolute; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        #btn-up { top: 0; left: 40px; width: 40px; height: 40px; }
+        #btn-down { bottom: 0; left: 40px; width: 40px; height: 40px; }
+        #btn-left { top: 40px; left: 0; width: 40px; height: 40px; }
+        #btn-right { top: 40px; right: 0; width: 40px; height: 40px; }
+
+        /* Botones Acción (Derecha) */
+        .act-btn { position: absolute; z-index: 20; border-radius: 8px; border: 2px solid white; font-weight: bold; font-size: 11px; display: flex; align-items: center; justify-content: center; color: white; }
+        #btn-action { bottom: 80px; right: 20px; width: 75px; height: 75px; background: rgba(46, 204, 113, 0.7); }
+        #btn-mode { bottom: 165px; right: 20px; width: 75px; height: 40px; background: rgba(52, 152, 219, 0.8); }
+        #btn-jump { bottom: 80px; right: 105px; width: 55px; height: 55px; background: rgba(241, 196, 15, 0.7); border-radius: 50%; }
+
+        /* Control de Esquemas Movibles */
+        #schematic-panel {
+            position: absolute; top: 10px; right: 10px; z-index: 20;
+            background: rgba(0,0,0,0.85); padding: 10px; border-radius: 8px; border: 1px solid #ffd700; max-width: 200px;
         }
-        #btn-jump { bottom: 80px; right: 20px; width: 60px; height: 60px; font-size: 12px; }
-        #btn-action { bottom: 150px; right: 20px; width: 65px; height: 65px; background: rgba(217,83,79,0.5); font-size: 11px; }
-        #mode-toggle { position: absolute; top: 10px; right: 10px; z-index: 20; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; border: 1px solid #ffd700; font-size: 12px; }
+        .sch-btn { padding: 4px; font-size: 10px; margin: 2px 0; background: #333; color: white; border: 1px solid #777; cursor: pointer; }
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -57,57 +70,81 @@
     <div id="login-modal">
         <div class="card">
             <h2>🗿 AztecCraft 3D</h2>
-            <input type="text" id="username" placeholder="Apodo / Nombre">
-            <input type="password" id="userpin" placeholder="PIN Secreto">
+            <p style="font-size: 12px; color: #aaa;">Supervivencia Procedural + Construcción Imperios</p>
+            <input type="text" id="username" placeholder="Tu Apodo">
             <input type="text" id="world-name" placeholder="Nombre del Mundo">
-            <select id="mode-select">
-                <option value="survival">🍃 Supervivencia</option>
-                <option value="hardcore">💀 Hardcore</option>
-            </select>
-            <button type="button" onclick="ingresarAlJuego()">¡Jugar Minecraft Azteca!</button>
+            <button type="button" onclick="ingresarAlJuego()">¡Iniciar Aventura!</button>
         </div>
     </div>
 
     <div id="crosshair"></div>
+    <div id="touch-camera-zone"></div>
 
     <div id="hud">
         <div>👤 <span id="hud-user">Jugador</span> | 🌍 <span id="hud-world">Mundo</span></div>
-        <div>🏆 Puntos: <span id="hud-score">0</span></div>
+        <div>❤️ HP: <span id="hud-hp">100</span> | 🏆 Puntos: <span id="hud-score">0</span></div>
     </div>
 
-    <div id="mode-toggle" onclick="toggleBuildMode()">Modo: <b id="action-label" style="color:#4cd137;">COLOCAR</b></div>
+    <!-- Panel de Esquemas Aztecas Movibles -->
+    <div id="schematic-panel">
+        <div style="font-size: 11px; font-weight: bold; color: #ffd700;">📜 Guía de Construcción</div>
+        <select id="select-schema" style="font-size: 11px; padding: 4px; margin: 4px 0;" onchange="cambiarEsquema()">
+            <option value="none">Ninguno</option>
+            <option value="altar">Altar Azteca (Piedra)</option>
+            <option value="piramide">Pirámide Sagrada</option>
+        </select>
+        <div id="schema-controls" style="display:none;">
+            <div style="font-size: 9px; color: #ccc;">Mover Plano Guía:</div>
+            <button class="sch-btn" onclick="moverEsquema(0, 1)">⬆️ Adelante</button>
+            <button class="sch-btn" onclick="moverEsquema(0, -1)">⬇️ Atrás</button>
+            <button class="sch-btn" onclick="moverEsquema(-1, 0)">⬅️ Izq</button>
+            <button class="sch-btn" onclick="moverEsquema(1, 0)">➡️ Der</button>
+        </div>
+    </div>
 
-    <div id="btn-jump" class="touch-btn">SALTAR</div>
-    <div id="btn-action" class="touch-btn" onclick="ejecutarAccion()">ACCION</div>
+    <!-- D-Pad Movimiento Jugador -->
+    <div id="dpad">
+        <div id="btn-up" class="dbtn">▲</div>
+        <div id="btn-down" class="dbtn">▼</div>
+        <div id="btn-left" class="dbtn">◀</div>
+        <div id="btn-right" class="dbtn">▶</div>
+    </div>
 
+    <!-- Botones de Acción -->
+    <div id="btn-mode" class="act-btn" onclick="toggleBuildMode()">MODO:<br><span id="mode-txt" style="color:#2ecc71;">COLOCAR</span></div>
+    <div id="btn-action" class="act-btn" onclick="ejecutarAccion()">USAR<br>BLOQUE</div>
+    <div id="btn-jump" class="act-btn">SALTAR</div>
+
+    <!-- Hotbar de Inventario (Comienza en 0) -->
     <div id="inventory">
-        <div class="slot selected" id="slot-grass" onclick="selectSlot('grass')">Pasto<br><span id="cnt-grass">∞</span></div>
-        <div class="slot" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><span id="cnt-stone">∞</span></div>
-        <div class="slot" id="slot-wood" onclick="selectSlot('wood')">Madera<br><span id="cnt-wood">∞</span></div>
-        <div class="slot" id="slot-gold" onclick="selectSlot('gold')">Oro<br><span id="cnt-gold">∞</span></div>
+        <div class="slot selected" id="slot-wood" onclick="selectSlot('wood')">Madera<br><b id="cnt-wood">0</b></div>
+        <div class="slot" id="slot-leaves" onclick="selectSlot('leaves')">Hojas<br><b id="cnt-leaves">0</b></div>
+        <div class="slot" id="slot-sapling" onclick="selectSlot('sapling')">Brote🌱<br><b id="cnt-sapling">0</b></div>
+        <div class="slot" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><b id="cnt-stone">0</b></div>
+        <div class="slot" id="slot-grass" onclick="selectSlot('grass')">Pasto<br><b id="cnt-grass">0</b></div>
     </div>
 
     <script>
+        // Configuración Firebase Base
         const firebaseConfig = {
           apiKey: "AIzaSyBDE_6jIBeW-xAbPF7FWLsUlEDv4toHmVk",
           authDomain: "azteccraft-80bc2.firebaseapp.com",
           databaseURL: "https://azteccraft-80bc2-default-rtdb.firebaseio.com",
-          projectId: "azteccraft-80bc2",
-          storageBucket: "azteccraft-80bc2.firebasestorage.app",
-          messagingSenderId: "854761490277",
-          appId: "1:854761490277:web:a04e46bc093a6b5d64c38c"
+          projectId: "azteccraft-80bc2"
         };
-        
         let db = null;
         try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e){}
 
-        let currentUser = "Jugador", currentWorld = "Mundo1", currentMode = "survival";
-        let score = 0, activeBlock = "grass", buildMode = true;
+        let currentUser = "Jugador", currentWorld = "Mundo1";
+        let score = 0, hp = 100, activeBlock = "wood", buildMode = true;
 
-        // Escena 3D
+        // Inventario Cero al Empezar
+        let inventory = { wood: 0, leaves: 0, sapling: 0, stone: 0, grass: 0 };
+
+        // Escena y Cámara 3D
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x7ec0ee);
-        scene.fog = new THREE.FogExp2(0x7ec0ee, 0.02);
+        scene.fog = new THREE.FogExp2(0x7ec0ee, 0.025);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -115,85 +152,189 @@
         document.body.appendChild(renderer.domElement);
 
         const light = new THREE.DirectionalLight(0xffffff, 1.2);
-        light.position.set(20, 40, 20);
+        light.position.set(30, 50, 30);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x666666));
+        scene.add(new THREE.AmbientLight(0x555555));
 
-        // Texturas/Materiales
+        // Materiales
         const materials = {
             grass: new THREE.MeshLambertMaterial({ color: 0x4aa02c }),
-            stone: new THREE.MeshLambertMaterial({ color: 0x808080 }),
-            wood: new THREE.MeshLambertMaterial({ color: 0x674111 }),
-            gold: new THREE.MeshLambertMaterial({ color: 0xffd700 })
+            dirt: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
+            stone: new THREE.MeshLambertMaterial({ color: 0x707070 }),
+            wood: new THREE.MeshLambertMaterial({ color: 0x5c4033 }),
+            leaves: new THREE.MeshLambertMaterial({ color: 0x2d8a1e, transparent: true, opacity: 0.9 }),
+            sapling: new THREE.MeshLambertMaterial({ color: 0x00ff00 }),
+            guide: new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true })
         };
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const blocks = [];
 
-        // Generar Mapa Inicial
-        for (let x = -10; x <= 10; x++) {
-            for (let z = -10; z <= 10; z++) {
-                const b = new THREE.Mesh(geometry, materials.grass);
-                b.position.set(x, 0, z);
-                scene.add(b);
-                blocks.push(b);
+        // Algoritmo de Terreno Procedural (Ruido Simple)
+        function getTerrainHeight(x, z) {
+            return Math.floor(Math.sin(x * 0.2) * Math.cos(z * 0.2) * 2) + 1;
+        }
 
-                // Árboles aleatorios
-                if (Math.random() < 0.03 && Math.abs(x) > 2 && Math.abs(z) > 2) {
-                    for(let h=1; h<=3; h++) {
-                        const trunk = new THREE.Mesh(geometry, materials.wood);
-                        trunk.position.set(x, h, z);
-                        scene.add(trunk);
-                        blocks.push(trunk);
+        // Generar Mapa Procedural
+        const mapSize = 16; // Radio del mundo seguro para móviles
+        for (let x = -mapSize; x <= mapSize; x++) {
+            for (let z = -mapSize; z <= mapSize; z++) {
+                let h = getTerrainHeight(x, z);
+                
+                // Bloque de Pasto Superficie
+                const topBlock = new THREE.Mesh(geometry, materials.grass);
+                topBlock.position.set(x, h, z);
+                topBlock.userData = { type: 'grass' };
+                scene.add(topBlock);
+                blocks.push(topBlock);
+
+                // Bloque de Piedra Subterráneo
+                const subBlock = new THREE.Mesh(geometry, materials.stone);
+                subBlock.position.set(x, h - 1, z);
+                subBlock.userData = { type: 'stone' };
+                scene.add(subBlock);
+                blocks.push(subBlock);
+
+                // Árboles Aleatorios
+                if (Math.random() < 0.04 && Math.abs(x) > 2 && Math.abs(z) > 2) {
+                    generarArbol(x, h + 1, z);
+                }
+            }
+        }
+
+        function generarArbol(x, y, z) {
+            for (let i = 0; i < 3; i++) {
+                const trunk = new THREE.Mesh(geometry, materials.wood);
+                trunk.position.set(x, y + i, z);
+                trunk.userData = { type: 'wood' };
+                scene.add(trunk);
+                blocks.push(trunk);
+            }
+            // Copa de Hojas
+            for (let lx = -1; lx <= 1; lx++) {
+                for (let lz = -1; lz <= 1; lz++) {
+                    for (let ly = 2; ly <= 3; ly++) {
+                        if (lx === 0 && lz === 0 && ly === 2) continue;
+                        const leaf = new THREE.Mesh(geometry, materials.leaves);
+                        leaf.position.set(x + lx, y + ly, z + lz);
+                        leaf.userData = { type: 'leaves' };
+                        scene.add(leaf);
+                        blocks.push(leaf);
                     }
                 }
             }
         }
 
-        // Posición del Jugador
-        camera.position.set(0, 2, 0);
+        // Jugador
+        camera.position.set(0, 5, 0);
+        let velocityY = 0, isGrounded = false;
+        const gravity = -0.012;
 
-        // Físicas y Movimiento
-        let velocityY = 0;
-        let isGrounded = false;
-        const gravity = -0.015;
+        // Enemigo Jaguar (Mob 3D Low-Poly)
+        const mobGroup = new THREE.Group();
+        const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), new THREE.MeshLambertMaterial({ color: 0xe67e22 }));
+        const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshLambertMaterial({ color: 0xd35400 }));
+        headMesh.position.set(0, 0.3, -0.7);
+        mobGroup.add(bodyMesh);
+        mobGroup.add(headMesh);
+        mobGroup.position.set(6, getTerrainHeight(6, 6) + 1, 6);
+        scene.add(mobGroup);
 
-        // Controles de Rotación Cámara Táctil
-        let touchStartX = 0, touchStartY = 0;
-        let lon = 0, lat = 0;
-
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches[0].clientX < window.innerWidth * 0.7) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            }
+        // Control Cámara (Sólo en Zona Derecha)
+        let lon = 0, lat = 0, touchStartX = 0, touchStartY = 0;
+        const camZone = document.getElementById('touch-camera-zone');
+        
+        camZone.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
         });
 
-        window.addEventListener('touchmove', (e) => {
-            if (e.touches[0].clientX < window.innerWidth * 0.7) {
-                const deltaX = e.touches[0].clientX - touchStartX;
-                const deltaY = e.touches[0].clientY - touchStartY;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
+        camZone.addEventListener('touchmove', (e) => {
+            let dx = e.touches[0].clientX - touchStartX;
+            let dy = e.touches[0].clientY - touchStartY;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
 
-                lon += deltaX * 0.3;
-                lat -= deltaY * 0.3;
-                lat = Math.max(-85, Math.min(85, lat));
-            }
+            lon += dx * 0.3;
+            lat -= dy * 0.3;
+            lat = Math.max(-80, Math.min(80, lat));
         });
 
-        // Botón Saltar
+        // Controles de Movimiento (D-Pad)
+        let moveState = { forward: 0, side: 0 };
+        const bindDpad = (id, fwd, side) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); moveState.forward = fwd; moveState.side = side; });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); moveState.forward = 0; moveState.side = 0; });
+        };
+        bindDpad('btn-up', 1, 0);
+        bindDpad('btn-down', -1, 0);
+        bindDpad('btn-left', 0, -1);
+        bindDpad('btn-right', 0, 1);
+
         document.getElementById('btn-jump').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (isGrounded) { velocityY = 0.25; isGrounded = false; }
+            if (isGrounded) { velocityY = 0.22; isGrounded = false; }
         });
 
         function toggleBuildMode() {
             buildMode = !buildMode;
-            const lbl = document.getElementById('action-label');
-            lbl.innerText = buildMode ? "COLOCAR" : "PICAR";
-            lbl.style.color = buildMode ? "#4cd137" : "#e84118";
+            const txt = document.getElementById('mode-txt');
+            txt.innerText = buildMode ? "COLOCAR" : "PICAR";
+            txt.style.color = buildMode ? "#2ecc71" : "#e74c3c";
         }
 
+        // Sistema de Esquema Azteca Movible
+        let guideBlocks = [];
+        let schemaPos = { x: 0, y: 2, z: -5 };
+
+        function cambiarEsquema() {
+            const type = document.getElementById('select-schema').value;
+            const ctrl = document.getElementById('schema-controls');
+            
+            // Limpiar guía anterior
+            guideBlocks.forEach(b => scene.remove(b));
+            guideBlocks = [];
+
+            if (type === 'none') {
+                ctrl.style.display = 'none';
+                return;
+            }
+            ctrl.style.display = 'block';
+            renderizarGuiaEsquema(type);
+        }
+
+        function renderizarGuiaEsquema(type) {
+            guideBlocks.forEach(b => scene.remove(b));
+            guideBlocks = [];
+
+            let pattern = [];
+            if (type === 'altar') {
+                pattern = [
+                    {x:0, y:0, z:0}, {x:1, y:0, z:0}, {x:-1, y:0, z:0},
+                    {x:0, y:0, z:1}, {x:0, y:0, z:-1}, {x:0, y:1, z:0}
+                ];
+            } else if (type === 'piramide') {
+                for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) pattern.push({x:x, y:0, z:z});
+                for(let x=-1; x<=1; x++) for(let z=-1; z<=1; z++) pattern.push({x:x, y:1, z:z});
+                pattern.push({x:0, y:2, z:0});
+            }
+
+            pattern.forEach(p => {
+                const g = new THREE.Mesh(geometry, materials.guide);
+                g.position.set(schemaPos.x + p.x, schemaPos.y + p.y, schemaPos.z + p.z);
+                scene.add(g);
+                guideBlocks.push(g);
+            });
+        }
+
+        function moverEsquema(dx, dz) {
+            schemaPos.x += dx;
+            schemaPos.z += dz;
+            const type = document.getElementById('select-schema').value;
+            renderizarGuiaEsquema(type);
+        }
+
+        // Picar / Colocar Bloques
         const raycaster = new THREE.Raycaster();
         const center = new THREE.Vector2(0, 0);
 
@@ -205,25 +346,55 @@
 
             if (intersects.length > 0) {
                 const hit = intersects[0];
+                
                 if (buildMode) {
                     // Colocar Bloque
-                    const newBlock = new THREE.Mesh(geometry, materials[activeBlock]);
-                    newBlock.position.copy(hit.object.position).add(hit.face.normal);
-                    scene.add(newBlock);
-                    blocks.push(newBlock);
-                    score += 10;
+                    if (inventory[activeBlock] > 0) {
+                        const typeToPlace = activeBlock;
+                        if (typeToPlace === 'sapling') {
+                            // Replantar Árbol
+                            generarArbol(hit.object.position.x + hit.face.normal.x, hit.object.position.y + hit.face.normal.y, hit.object.position.z + hit.face.normal.z);
+                        } else {
+                            const newBlock = new THREE.Mesh(geometry, materials[typeToPlace]);
+                            newBlock.position.copy(hit.object.position).add(hit.face.normal);
+                            newBlock.userData = { type: typeToPlace };
+                            scene.add(newBlock);
+                            blocks.push(newBlock);
+                        }
+                        inventory[activeBlock]--;
+                        score += 10;
+                    }
                 } else {
                     // Picar Bloque
-                    if (hit.object.position.y !== 0) { // No romper el piso base
-                        scene.remove(hit.object);
-                        const idx = blocks.indexOf(hit.object);
-                        if (idx > -1) blocks.splice(idx, 1);
-                        score += 5;
-                    }
+                    const bType = hit.object.userData.type || 'stone';
+                    scene.remove(hit.object);
+                    const idx = blocks.indexOf(hit.object);
+                    if (idx > -1) blocks.splice(idx, 1);
+
+                    // Recompensa en Inventario
+                    if (inventory[bType] !== undefined) inventory[bType]++;
+                    if (bType === 'leaves' && Math.random() < 0.4) inventory.sapling++; // Probabilidad de obtener brote
+                    
+                    score += 5;
                 }
-                document.getElementById('hud-score').innerText = score;
-                guardarEnNube();
+                actualizarUI();
             }
+        }
+
+        function selectSlot(type) {
+            activeBlock = type;
+            document.querySelectorAll('.slot').forEach(el => el.classList.remove('selected'));
+            document.getElementById('slot-' + type).classList.add('selected');
+        }
+
+        function actualizarUI() {
+            document.getElementById('hud-score').innerText = score;
+            document.getElementById('hud-hp').innerText = hp;
+            document.getElementById('cnt-wood').innerText = inventory.wood;
+            document.getElementById('cnt-leaves').innerText = inventory.leaves;
+            document.getElementById('cnt-sapling').innerText = inventory.sapling;
+            document.getElementById('cnt-stone').innerText = inventory.stone;
+            document.getElementById('cnt-grass').innerText = inventory.grass;
         }
 
         function ingresarAlJuego() {
@@ -235,38 +406,34 @@
             document.getElementById('hud-user').innerText = currentUser;
             document.getElementById('hud-world').innerText = currentWorld;
             document.getElementById('login-modal').style.display = 'none';
+            actualizarUI();
         }
 
-        function selectSlot(type) {
-            activeBlock = type;
-            document.querySelectorAll('.slot').forEach(el => el.classList.remove('selected'));
-            document.getElementById('slot-' + type).classList.add('selected');
-        }
-
-        function guardarEnNube() {
-            if (db && currentUser && currentWorld) {
-                try {
-                    db.ref(`ranking_supervivencia/${currentUser}_${currentWorld}`).set({
-                        jugador: currentUser, mundo: currentWorld, score: score
-                    });
-                } catch(e){}
-            }
-        }
-
+        // Bucle Principal de Juego
         function animate() {
             requestAnimationFrame(animate);
 
-            // Gravedad
+            // Gravedad y Colisión básica con Suelo
             velocityY += gravity;
             camera.position.y += velocityY;
 
-            if (camera.position.y <= 1.8) {
-                camera.position.y = 1.8;
+            const floorH = getTerrainHeight(Math.round(camera.position.x), Math.round(camera.position.z)) + 1.8;
+            if (camera.position.y <= floorH) {
+                camera.position.y = floorH;
                 velocityY = 0;
                 isGrounded = true;
             }
 
-            // Actualizar rotación de cámara
+            // Movimiento relativo a la cámara
+            if (moveState.forward !== 0 || moveState.side !== 0) {
+                const dirX = Math.sin(THREE.MathUtils.degToRad(lon));
+                const dirZ = Math.cos(THREE.MathUtils.degToRad(lon));
+                
+                camera.position.x -= (dirX * moveState.forward + dirZ * moveState.side) * 0.12;
+                camera.position.z -= (dirZ * moveState.forward - dirX * moveState.side) * 0.12;
+            }
+
+            // Rotación de Cámara
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
             const target = new THREE.Vector3();
@@ -274,6 +441,17 @@
             target.y = camera.position.y + Math.cos(phi);
             target.z = camera.position.z + Math.sin(phi) * Math.sin(theta);
             camera.lookAt(target);
+
+            // IA Básica de Mob Jaguar (Avanza hacia el jugador)
+            if (mobGroup.position.distanceTo(camera.position) < 10) {
+                mobGroup.lookAt(camera.position.x, mobGroup.position.y, camera.position.z);
+                mobGroup.translateZ(0.02);
+                
+                if (mobGroup.position.distanceTo(camera.position) < 1.2) {
+                    hp = Math.max(0, hp - 1);
+                    actualizarUI();
+                }
+            }
 
             renderer.render(scene, camera);
         }
