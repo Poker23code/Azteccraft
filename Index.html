@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AztecCraft: Empire Sandbox</title>
+    <title>AztecCraft 3D: Empire Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #111; color: white; user-select: none; }
+        * { touch-action: manipulation; box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #000; color: white; user-select: none; }
         
         #login-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -13,26 +14,40 @@
             align-items: center; justify-content: center; z-index: 100;
         }
         .card { background: #222; padding: 25px; border-radius: 12px; border: 2px solid #8b4513; text-align: center; max-width: 380px; width: 90%; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; font-size: 15px; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: none; font-size: 15px; }
         button { background: #d9534f; color: white; font-weight: bold; cursor: pointer; }
 
-        #hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 14px; pointer-events: none; }
-        #schematic-panel {
-            position: absolute; top: 10px; right: 10px; z-index: 10;
-            background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #ffd700; max-width: 220px;
+        /* UI y Crosshair */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 20;
         }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
+        #crosshair::before { top: 5px; left: 0; width: 12px; height: 2px; }
+        #crosshair::after { top: 0; left: 5px; width: 2px; height: 12px; }
+
+        #hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 13px; pointer-events: none; }
         
+        /* Hotbar de Inventario */
         #inventory {
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 8px; z-index: 10;
+            display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 6px; border-radius: 8px; z-index: 20;
         }
-        .slot { width: 55px; height: 50px; border: 2px solid #fff; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; }
-        .slot.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
+        .slot { width: 50px; height: 50px; border: 2px solid #aaa; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; background: rgba(0,0,0,0.5); }
+        .slot.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700; background: rgba(255,215,0,0.2); }
 
-        .fullscreen-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px; box-sizing: border-box; }
+        /* Controles Táctiles Celular */
+        .touch-btn {
+            position: absolute; z-index: 20; background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: white; user-select: none;
+        }
+        #btn-jump { bottom: 80px; right: 20px; width: 60px; height: 60px; font-size: 12px; }
+        #btn-action { bottom: 150px; right: 20px; width: 65px; height: 65px; background: rgba(217,83,79,0.5); font-size: 11px; }
+        #mode-toggle { position: absolute; top: 10px; right: 10px; z-index: 20; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; border: 1px solid #ffd700; font-size: 12px; }
     </style>
 
-    <!-- CDN Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -43,53 +58,33 @@
         <div class="card">
             <h2>🗿 AztecCraft 3D</h2>
             <input type="text" id="username" placeholder="Apodo / Nombre">
-            <input type="password" id="userpin" placeholder="PIN Secreto (4 dígitos)">
-            
-            <hr style="border-color: #444; margin: 12px 0;">
-            
-            <label>Seleccionar/Crear Mundo:</label>
-            <input type="text" id="world-name" placeholder="Nombre del Mundo (ej: Tenochtitlan1)">
+            <input type="password" id="userpin" placeholder="PIN Secreto">
+            <input type="text" id="world-name" placeholder="Nombre del Mundo">
             <select id="mode-select">
-                <option value="survival">🍃 Supervivencia (Con Respawn)</option>
-                <option value="hardcore">💀 Hardcore (Muerte Permanente)</option>
+                <option value="survival">🍃 Supervivencia</option>
+                <option value="hardcore">💀 Hardcore</option>
             </select>
-
-            <button type="button" id="btn-entrar" onclick="ingresarAlJuego()">Entrar al Mundo</button>
+            <button type="button" onclick="ingresarAlJuego()">¡Jugar Minecraft Azteca!</button>
         </div>
     </div>
 
+    <div id="crosshair"></div>
+
     <div id="hud">
-        <div>👤 Jugador: <span id="hud-user">-</span> | 🌍 Mundo: <span id="hud-world">-</span></div>
-        <div>❤️ Salud: <span id="hud-hp">100</span>% | ☀️ Días: <span id="hud-days">1</span></div>
-        <div>🏆 Puntos: <span id="hud-score">0</span> (<span id="hud-mode">-</span>)</div>
-        <div id="gamepad-status" style="color: #4cd137; font-size: 11px; margin-top: 4px;">🎮 Joystick: No detectado</div>
+        <div>👤 <span id="hud-user">Jugador</span> | 🌍 <span id="hud-world">Mundo</span></div>
+        <div>🏆 Puntos: <span id="hud-score">0</span></div>
     </div>
 
-    <div id="schematic-panel">
-        <h4 style="margin:0 0 5px 0; color:#ffd700;">📜 Planos de Construcción</h4>
-        <select id="select-schema" onchange="cambiarEsquema()">
-            <option value="chinampa">Chinampa Agrícola (+50 pts)</option>
-            <option value="altar">Altar Solar (+150 pts)</option>
-            <option value="calzada">Calzada del Lago (+250 pts)</option>
-            <option value="piramide_chica">Pirámide Menor (+400 pts)</option>
-            <option value="pelota">Juego de Pelota (+700 pts)</option>
-            <option value="quetzalcoatl">Templo Quetzalcóatl (+950 pts)</option>
-            <option value="templo_mayor">Templo Mayor (+1200 pts)</option>
-            <option value="palacio">Palacio Imperial (+2500 pts)</option>
-        </select>
-        <p id="schema-info" style="font-size: 11px; margin-top: 6px; color: #ccc;">Req: 4 Madera, 4 Pasto</p>
-    </div>
+    <div id="mode-toggle" onclick="toggleBuildMode()">Modo: <b id="action-label" style="color:#4cd137;">COLOCAR</b></div>
+
+    <div id="btn-jump" class="touch-btn">SALTAR</div>
+    <div id="btn-action" class="touch-btn" onclick="ejecutarAccion()">ACCION</div>
 
     <div id="inventory">
-        <div class="slot selected" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><span id="cnt-stone">20</span></div>
-        <div class="slot" id="slot-wood" onclick="selectSlot('wood')">Madera<br><span id="cnt-wood">20</span></div>
-        <div class="slot" id="slot-gold" onclick="selectSlot('gold')">Oro<br><span id="cnt-gold">10</span></div>
-    </div>
-
-    <div id="mictlan-overlay" class="fullscreen-overlay">
-        <h2 style="color:#d9534f;" id="god-title">💀 Mictlantecuhtli te ha recibido</h2>
-        <p id="death-msg">En Supervivencia puedes regresar a continuar tu imperio.</p>
-        <button onclick="revivir()">Continuar</button>
+        <div class="slot selected" id="slot-grass" onclick="selectSlot('grass')">Pasto<br><span id="cnt-grass">∞</span></div>
+        <div class="slot" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><span id="cnt-stone">∞</span></div>
+        <div class="slot" id="slot-wood" onclick="selectSlot('wood')">Madera<br><span id="cnt-wood">∞</span></div>
+        <div class="slot" id="slot-gold" onclick="selectSlot('gold')">Oro<br><span id="cnt-gold">∞</span></div>
     </div>
 
     <script>
@@ -104,191 +99,142 @@
         };
         
         let db = null;
-        try {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-            }
-        } catch(e) {
-            console.warn("Firebase no iniciado:", e);
-        }
+        try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e){}
 
         let currentUser = "Jugador", currentWorld = "Mundo1", currentMode = "survival";
-        let score = 0, hp = 100, days = 1, activeBlock = "stone";
-        let inventory = { stone: 20, wood: 20, gold: 10 };
+        let score = 0, activeBlock = "grass", buildMode = true;
 
-        const esquemas = {
-            chinampa: { req: "4 Madera, 4 Pasto", bonus: 50 },
-            altar: { req: "8 Piedra, 1 Oro", bonus: 150 },
-            calzada: { req: "12 Piedra, 6 Madera", bonus: 250 },
-            piramide_chica: { req: "16 Piedra, 4 Oro", bonus: 400 },
-            pelota: { req: "24 Piedra, 8 Madera", bonus: 700 },
-            quetzalcoatl: { req: "28 Piedra, 6 Oro, 4 Madera", bonus: 950 },
-            templo_mayor: { req: "36 Piedra, 12 Madera, 9 Oro", bonus: 1200 },
-            palacio: { req: "50 Piedra, 20 Madera, 15 Oro", bonus: 2500 }
-        };
-
-        function cambiarEsquema() {
-            const val = document.getElementById('select-schema').value;
-            document.getElementById('schema-info').innerText = "Req: " + esquemas[val].req;
-        }
-
-        // Renderizado 3D
+        // Escena 3D
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb);
+        scene.background = new THREE.Color(0x7ec0ee);
+        scene.fog = new THREE.FogExp2(0x7ec0ee, 0.02);
+
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(10, 20, 10).normalize();
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(20, 40, 20);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
+        scene.add(new THREE.AmbientLight(0x666666));
 
+        // Texturas/Materiales
         const materials = {
-            grass: new THREE.MeshLambertMaterial({ color: 0x3a5f0b }),
-            stone: new THREE.MeshLambertMaterial({ color: 0x7d7d7d }),
-            wood: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
-            gold: new THREE.MeshLambertMaterial({ color: 0xd4af37 })
+            grass: new THREE.MeshLambertMaterial({ color: 0x4aa02c }),
+            stone: new THREE.MeshLambertMaterial({ color: 0x808080 }),
+            wood: new THREE.MeshLambertMaterial({ color: 0x674111 }),
+            gold: new THREE.MeshLambertMaterial({ color: 0xffd700 })
         };
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const blocks = [];
 
-        for (let x = -5; x <= 5; x++) {
-            for (let z = -5; z <= 5; z++) {
+        // Generar Mapa Inicial
+        for (let x = -10; x <= 10; x++) {
+            for (let z = -10; z <= 10; z++) {
                 const b = new THREE.Mesh(geometry, materials.grass);
                 b.position.set(x, 0, z);
                 scene.add(b);
                 blocks.push(b);
+
+                // Árboles aleatorios
+                if (Math.random() < 0.03 && Math.abs(x) > 2 && Math.abs(z) > 2) {
+                    for(let h=1; h<=3; h++) {
+                        const trunk = new THREE.Mesh(geometry, materials.wood);
+                        trunk.position.set(x, h, z);
+                        scene.add(trunk);
+                        blocks.push(trunk);
+                    }
+                }
             }
         }
-        camera.position.set(0, 4, 8);
-        camera.lookAt(0, 0, 0);
 
-        function ingresarAlJuego() {
-            const u = document.getElementById('username').value.trim();
-            const w = document.getElementById('world-name').value.trim();
-            
-            if (u) currentUser = u;
-            if (w) currentWorld = w;
-            currentMode = document.getElementById('mode-select').value;
+        // Posición del Jugador
+        camera.position.set(0, 2, 0);
 
-            document.getElementById('hud-user').innerText = currentUser;
-            document.getElementById('hud-world').innerText = currentWorld;
-            document.getElementById('hud-mode').innerText = currentMode.toUpperCase();
-            
-            // Ocultar modal de inmediato (Garantizado)
-            document.getElementById('login-modal').style.display = 'none';
+        // Físicas y Movimiento
+        let velocityY = 0;
+        let isGrounded = false;
+        const gravity = -0.015;
 
-            actualizarInventarioUI();
+        // Controles de Rotación Cámara Táctil
+        let touchStartX = 0, touchStartY = 0;
+        let lon = 0, lat = 0;
 
-            // Sincronizar Firebase
-            if (db) {
-                try {
-                    const ref = db.ref(`jugadores/${currentUser}/mundos/${currentWorld}`);
-                    ref.once('value').then(snap => {
-                        const val = snap.val();
-                        if (val) {
-                            score = val.score || 0;
-                            days = val.days || 1;
-                            document.getElementById('hud-score').innerText = score;
-                            document.getElementById('hud-days').innerText = days;
-                        } else {
-                            ref.set({ modo: currentMode, score: 0, days: 1 });
-                        }
-                    }).catch(err => console.log(err));
-                } catch(e) { console.log(e); }
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches[0].clientX < window.innerWidth * 0.7) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
             }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches[0].clientX < window.innerWidth * 0.7) {
+                const deltaX = e.touches[0].clientX - touchStartX;
+                const deltaY = e.touches[0].clientY - touchStartY;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+
+                lon += deltaX * 0.3;
+                lat -= deltaY * 0.3;
+                lat = Math.max(-85, Math.min(85, lat));
+            }
+        });
+
+        // Botón Saltar
+        document.getElementById('btn-jump').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (isGrounded) { velocityY = 0.25; isGrounded = false; }
+        });
+
+        function toggleBuildMode() {
+            buildMode = !buildMode;
+            const lbl = document.getElementById('action-label');
+            lbl.innerText = buildMode ? "COLOCAR" : "PICAR";
+            lbl.style.color = buildMode ? "#4cd137" : "#e84118";
         }
 
         const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
+        const center = new THREE.Vector2(0, 0);
 
-        function colocarBloque(clientX, clientY) {
+        function ejecutarAccion() {
             if (document.getElementById('login-modal').style.display !== 'none') return;
-            if (inventory[activeBlock] <= 0) return;
 
-            if (clientX === undefined || clientY === undefined) {
-                mouse.x = 0; mouse.y = 0;
-            } else {
-                mouse.x = (clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-            }
-
-            raycaster.setFromCamera(mouse, camera);
+            raycaster.setFromCamera(center, camera);
             const intersects = raycaster.intersectObjects(blocks);
 
             if (intersects.length > 0) {
-                const intersect = intersects[0];
-                const newBlock = new THREE.Mesh(geometry, materials[activeBlock]);
-                newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
-                
-                scene.add(newBlock);
-                blocks.push(newBlock);
-
-                inventory[activeBlock]--;
-                score += (activeBlock === 'gold' ? 25 : 10);
-                
+                const hit = intersects[0];
+                if (buildMode) {
+                    // Colocar Bloque
+                    const newBlock = new THREE.Mesh(geometry, materials[activeBlock]);
+                    newBlock.position.copy(hit.object.position).add(hit.face.normal);
+                    scene.add(newBlock);
+                    blocks.push(newBlock);
+                    score += 10;
+                } else {
+                    // Picar Bloque
+                    if (hit.object.position.y !== 0) { // No romper el piso base
+                        scene.remove(hit.object);
+                        const idx = blocks.indexOf(hit.object);
+                        if (idx > -1) blocks.splice(idx, 1);
+                        score += 5;
+                    }
+                }
                 document.getElementById('hud-score').innerText = score;
-                actualizarInventarioUI();
                 guardarEnNube();
             }
         }
 
-        window.addEventListener('pointerdown', (e) => {
-            // Evitar colocar bloque si toca sobre paneles del HUD
-            if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.closest('#inventory') || e.target.closest('#schematic-panel')) return;
-            colocarBloque(e.clientX, e.clientY);
-        });
+        function ingresarAlJuego() {
+            const u = document.getElementById('username').value.trim();
+            const w = document.getElementById('world-name').value.trim();
+            if (u) currentUser = u;
+            if (w) currentWorld = w;
 
-        window.addEventListener('keydown', (e) => {
-            if (e.key === '1') selectSlot('stone');
-            if (e.key === '2') selectSlot('wood');
-            if (e.key === '3') selectSlot('gold');
-        });
-
-        let lastButtonPressed = false;
-
-        window.addEventListener("gamepadconnected", (e) => {
-            document.getElementById('gamepad-status').innerText = "🎮 Joystick: Conectado (" + e.gamepad.id.substring(0, 10) + "...)";
-        });
-
-        window.addEventListener("gamepaddisconnected", () => {
-            document.getElementById('gamepad-status').innerText = "🎮 Joystick: No detectado";
-        });
-
-        function pollGamepad() {
-            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-            if (gamepads[0]) {
-                const gp = gamepads[0];
-                if (gp.buttons[0].pressed) {
-                    if (!lastButtonPressed) {
-                        colocarBloque();
-                        lastButtonPressed = true;
-                    }
-                } else {
-                    lastButtonPressed = false;
-                }
-                if (gp.buttons[4].pressed) selectSlot('stone');
-                if (gp.buttons[5].pressed) selectSlot('wood');
-            }
-        }
-
-        function guardarEnNube() {
-            if (db && currentUser && currentWorld) {
-                try {
-                    db.ref(`jugadores/${currentUser}/mundos/${currentWorld}`).update({ score: score, days: days });
-                    
-                    const tabla = currentMode === 'survival' ? 'ranking_supervivencia' : 'ranking_hardcore';
-                    db.ref(`${tabla}/${currentUser}_${currentWorld}`).set({
-                        jugador: currentUser,
-                        mundo: currentWorld,
-                        score: score,
-                        dias: days
-                    });
-                } catch(e) { console.log(e); }
-            }
+            document.getElementById('hud-user').innerText = currentUser;
+            document.getElementById('hud-world').innerText = currentWorld;
+            document.getElementById('login-modal').style.display = 'none';
         }
 
         function selectSlot(type) {
@@ -297,26 +243,38 @@
             document.getElementById('slot-' + type).classList.add('selected');
         }
 
-        function actualizarInventarioUI() {
-            document.getElementById('cnt-stone').innerText = inventory.stone;
-            document.getElementById('cnt-wood').innerText = inventory.wood;
-            document.getElementById('cnt-gold').innerText = inventory.gold;
-        }
-
-        function revivir() {
-            if (currentMode === 'hardcore') {
-                location.reload();
-            } else {
-                hp = 100;
-                document.getElementById('hud-hp').innerText = hp;
-                document.getElementById('mictlan-overlay').style.display = 'none';
+        function guardarEnNube() {
+            if (db && currentUser && currentWorld) {
+                try {
+                    db.ref(`ranking_supervivencia/${currentUser}_${currentWorld}`).set({
+                        jugador: currentUser, mundo: currentWorld, score: score
+                    });
+                } catch(e){}
             }
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            pollGamepad();
-            scene.rotation.y += 0.001;
+
+            // Gravedad
+            velocityY += gravity;
+            camera.position.y += velocityY;
+
+            if (camera.position.y <= 1.8) {
+                camera.position.y = 1.8;
+                velocityY = 0;
+                isGrounded = true;
+            }
+
+            // Actualizar rotación de cámara
+            const phi = THREE.MathUtils.degToRad(90 - lat);
+            const theta = THREE.MathUtils.degToRad(lon);
+            const target = new THREE.Vector3();
+            target.x = camera.position.x + Math.sin(phi) * Math.cos(theta);
+            target.y = camera.position.y + Math.cos(phi);
+            target.z = camera.position.z + Math.sin(phi) * Math.sin(theta);
+            camera.lookAt(target);
+
             renderer.render(scene, camera);
         }
         animate();
