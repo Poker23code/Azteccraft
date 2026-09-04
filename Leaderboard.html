@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabla de Clasificación Azteca</title>
+<style>
+body {
+background-color: #0f0f0f;
+color: white;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+text-align: center;
+padding: 20px;
+margin: 0;
+}
+h1 { color: #ffd700; text-shadow: 2px 2px 5px #000; font-size: 32px; }
+.subtitle { color: #aaa; margin-bottom: 30px; font-size: 16px; }
+
+.boards-container {
+display: flex;
+justify-content: center;
+gap: 30px;
+flex-wrap: wrap;
+max-width: 1000px;
+margin: 0 auto;
+}
+
+.board {
+background: #1e1e1e;
+border: 2px solid #8b4513;
+border-radius: 12px;
+width: 45%;
+min-width: 300px;
+padding: 20px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.board h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+.survival-title { color: #4cd137; }
+.hardcore-title { color: #e84118; }
+
+ol { text-align: left; font-size: 18px; padding-left: 25px; line-height: 2.2; }
+li { border-bottom: 1px solid #333; padding: 4px 0; }
+li span.pts { float: right; color: #ffd700; font-weight: bold; }
+.empty-msg { color: #666; font-style: italic; text-align: center; margin-top: 20px; }
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+<h1>🗿 Ranking del Imperio Azteca</h1>
+<div class="subtitle">Puntuaciones en vivo de los visitantes del stand</div>
+
+<div class="boards-container">
+<div class="board">
+<h2 class="survival-title">🍃 Supervivencia</h2>
+<ol id="top-survival"></ol>
+<div id="empty-survival" class="empty-msg">Cargando datos...</div>
+</div>
+<div class="board">
+<h2 class="hardcore-title">💀 Hardcore</h2>
+<ol id="top-hardcore"></ol>
+<div id="empty-hardcore" class="empty-msg">Cargando datos...</div>
+</div>
+</div>
+
+<script>
+const firebaseConfig = {
+apiKey: "AIzaSyBDE_6jIBeW-xAbPF7FWLsUlEDv4toHmVk",
+authDomain: "azteccraft-80bc2.firebaseapp.com",
+databaseURL: "https://azteccraft-80bc2-default-rtdb.firebaseio.com",
+projectId: "azteccraft-80bc2",
+storageBucket: "azteccraft-80bc2.firebasestorage.app",
+messagingSenderId: "854761490277",
+appId: "1:854761490277:web:a04e46bc093a6b5d64c38c"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function escucharRanking(nodo, listaId, vacioId) {
+db.ref(nodo).orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+const lista = document.getElementById(listaId);
+const vacio = document.getElementById(vacioId);
+lista.innerHTML = "";
+
+if (!snapshot.exists()) {
+vacio.innerText = "Aún no hay puntuaciones registradas.";
+vacio.style.display = "block";
+return;
+}
+
+vacio.style.display = "none";
+let items = [];
+snapshot.forEach(child => { items.push(child.val()); });
+
+items.reverse().forEach(player => {
+const li = document.createElement('li');
+li.innerHTML = <b&gt;${player.jugador}</b> <small style="color:#888;">(${player.mundo})&lt;/small&gt; &lt;span class="pts"&gt;${player.score} pts&lt;/span>;
+lista.appendChild(li);
+});
+});
+}
+
+escucharRanking('ranking_supervivencia', 'top-survival', 'empty-survival');
+escucharRanking('ranking_hardcore', 'top-hardcore', 'empty-hardcore');
+</script>
+</body>
+</html>
