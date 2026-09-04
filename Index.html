@@ -1,334 +1,325 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>AztecCraft: Empire Sandbox</title>
-<style>
-body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #111; color: white; user-select: none; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AztecCraft: Empire Sandbox</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background-color: #111; color: white; user-select: none; }
+        
+        #login-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100;
+        }
+        .card { background: #222; padding: 25px; border-radius: 12px; border: 2px solid #8b4513; text-align: center; max-width: 380px; width: 90%; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; font-size: 15px; }
+        button { background: #d9534f; color: white; font-weight: bold; cursor: pointer; }
 
-#login-modal {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-background: rgba(0,0,0,0.92); display: flex; flex-direction: column;
-align-items: center; justify-content: center; z-index: 100;
-}
-.card { background: #222; padding: 25px; border-radius: 12px; border: 2px solid #8b4513; text-align: center; max-width: 380px; width: 90%; }
-input, select, button { width: 100%; padding: 10px; margin: 6px 0; box-sizing: border-box; border-radius: 6px; border: none; font-size: 15px; }
-button { background: #d9534f; color: white; font-weight: bold; cursor: pointer; }
+        #hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 14px; pointer-events: none; }
+        #schematic-panel {
+            position: absolute; top: 10px; right: 10px; z-index: 10;
+            background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #ffd700; max-width: 220px;
+        }
+        
+        #inventory {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 8px; z-index: 10;
+        }
+        .slot { width: 55px; height: 50px; border: 2px solid #fff; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; }
+        .slot.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
 
-#hud { position: absolute; top: 10px; left: 10px; z-index: 10; text-shadow: 2px 2px 4px #000; font-size: 14px; }
-#schematic-panel {
-position: absolute; top: 10px; right: 10px; z-index: 10;
-background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #ffd700; max-width: 220px;
-}
+        .fullscreen-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px; box-sizing: border-box; }
+    </style>
 
-#inventory {
-position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-display: flex; gap: 8px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 8px; z-index: 10;
-}
-.slot { width: 55px; height: 50px; border: 2px solid #fff; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; }
-.slot.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
-
-.fullscreen-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px; box-sizing: border-box; }
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <!-- CDN Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-<div id="login-modal">
-<div class="card">
-<h2>🗿 AztecCraft 3D</h2>
-<input type="text" id="username" placeholder="Apodo / Nombre">
-<input type="password" id="userpin" placeholder="PIN Secreto (4 dígitos)">
+    <div id="login-modal">
+        <div class="card">
+            <h2>🗿 AztecCraft 3D</h2>
+            <input type="text" id="username" placeholder="Apodo / Nombre">
+            <input type="password" id="userpin" placeholder="PIN Secreto (4 dígitos)">
+            
+            <hr style="border-color: #444; margin: 12px 0;">
+            
+            <label>Seleccionar/Crear Mundo:</label>
+            <input type="text" id="world-name" placeholder="Nombre del Mundo (ej: Tenochtitlan1)">
+            <select id="mode-select">
+                <option value="survival">🍃 Supervivencia (Con Respawn)</option>
+                <option value="hardcore">💀 Hardcore (Muerte Permanente)</option>
+            </select>
 
-<hr style="border-color: #444; margin: 12px 0;">
+            <button type="button" id="btn-entrar" onclick="ingresarAlJuego()">Entrar al Mundo</button>
+        </div>
+    </div>
 
-<label>Seleccionar/Crear Mundo:</label>
-<input type="text" id="world-name" placeholder="Nombre del Mundo (ej: Tenochtitlan1)">
-<select id="mode-select">
-<option value="survival">🍃 Supervivencia (Con Respawn)</option>
-<option value="hardcore">💀 Hardcore (Muerte Permanente)</option>
-</select>
+    <div id="hud">
+        <div>👤 Jugador: <span id="hud-user">-</span> | 🌍 Mundo: <span id="hud-world">-</span></div>
+        <div>❤️ Salud: <span id="hud-hp">100</span>% | ☀️ Días: <span id="hud-days">1</span></div>
+        <div>🏆 Puntos: <span id="hud-score">0</span> (<span id="hud-mode">-</span>)</div>
+        <div id="gamepad-status" style="color: #4cd137; font-size: 11px; margin-top: 4px;">🎮 Joystick: No detectado</div>
+    </div>
 
-<button id="btn-entrar" type="button">Entrar al Mundo</button>
-</div>
-</div>
+    <div id="schematic-panel">
+        <h4 style="margin:0 0 5px 0; color:#ffd700;">📜 Planos de Construcción</h4>
+        <select id="select-schema" onchange="cambiarEsquema()">
+            <option value="chinampa">Chinampa Agrícola (+50 pts)</option>
+            <option value="altar">Altar Solar (+150 pts)</option>
+            <option value="calzada">Calzada del Lago (+250 pts)</option>
+            <option value="piramide_chica">Pirámide Menor (+400 pts)</option>
+            <option value="pelota">Juego de Pelota (+700 pts)</option>
+            <option value="quetzalcoatl">Templo Quetzalcóatl (+950 pts)</option>
+            <option value="templo_mayor">Templo Mayor (+1200 pts)</option>
+            <option value="palacio">Palacio Imperial (+2500 pts)</option>
+        </select>
+        <p id="schema-info" style="font-size: 11px; margin-top: 6px; color: #ccc;">Req: 4 Madera, 4 Pasto</p>
+    </div>
 
-<div id="hud">
-<div>👤 Jugador: <span id="hud-user">-</span> | 🌍 Mundo: <span id="hud-world">-</span></div>
-<div>❤️ Salud: <span id="hud-hp">100</span>% | ☀️ Días: <span id="hud-days">1</span></div>
-<div>🏆 Puntos: <span id="hud-score">0</span> (<span id="hud-mode">-</span>)</div>
-<div id="gamepad-status" style="color: #4cd137; font-size: 11px; margin-top: 4px;">🎮 Joystick: No detectado</div>
-</div>
+    <div id="inventory">
+        <div class="slot selected" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><span id="cnt-stone">20</span></div>
+        <div class="slot" id="slot-wood" onclick="selectSlot('wood')">Madera<br><span id="cnt-wood">20</span></div>
+        <div class="slot" id="slot-gold" onclick="selectSlot('gold')">Oro<br><span id="cnt-gold">10</span></div>
+    </div>
 
-<div id="schematic-panel">
-<h4 style="margin:0 0 5px 0; color:#ffd700;">📜 Planos de Construcción</h4>
-<select id="select-schema" onchange="cambiarEsquema()">
-<option value="chinampa">Chinampa Agrícola (+50 pts)</option>
-<option value="altar">Altar Solar (+150 pts)</option>
-<option value="calzada">Calzada del Lago (+250 pts)</option>
-<option value="piramide_chica">Pirámide Menor (+400 pts)</option>
-<option value="pelota">Juego de Pelota (+700 pts)</option>
-<option value="quetzalcoatl">Templo Quetzalcóatl (+950 pts)</option>
-<option value="templo_mayor">Templo Mayor (+1200 pts)</option>
-<option value="palacio">Palacio Imperial (+2500 pts)</option>
-</select>
-<p id="schema-info" style="font-size: 11px; margin-top: 6px; color: #ccc;">Req: 4 Madera, 4 Pasto</p>
-</div>
+    <div id="mictlan-overlay" class="fullscreen-overlay">
+        <h2 style="color:#d9534f;" id="god-title">💀 Mictlantecuhtli te ha recibido</h2>
+        <p id="death-msg">En Supervivencia puedes regresar a continuar tu imperio.</p>
+        <button onclick="revivir()">Continuar</button>
+    </div>
 
-<div id="inventory">
-<div class="slot selected" id="slot-stone" onclick="selectSlot('stone')">Piedra<br><span id="cnt-stone">20</span></div>
-<div class="slot" id="slot-wood" onclick="selectSlot('wood')">Madera<br><span id="cnt-wood">20</span></div>
-<div class="slot" id="slot-gold" onclick="selectSlot('gold')">Oro<br><span id="cnt-gold">10</span></div>
-</div>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBDE_6jIBeW-xAbPF7FWLsUlEDv4toHmVk",
+          authDomain: "azteccraft-80bc2.firebaseapp.com",
+          databaseURL: "https://azteccraft-80bc2-default-rtdb.firebaseio.com",
+          projectId: "azteccraft-80bc2",
+          storageBucket: "azteccraft-80bc2.firebasestorage.app",
+          messagingSenderId: "854761490277",
+          appId: "1:854761490277:web:a04e46bc093a6b5d64c38c"
+        };
+        
+        let db = null;
+        try {
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+            }
+        } catch(e) {
+            console.warn("Firebase no iniciado:", e);
+        }
 
-<div id="mictlan-overlay" class="fullscreen-overlay">
-<h2 style="color:#d9534f;" id="god-title">💀 Mictlantecuhtli te ha recibido</h2>
-<p id="death-msg">En Supervivencia puedes regresar a continuar tu imperio.</p>
-<button onclick="revivir()">Continuar</button>
-</div>
+        let currentUser = "Jugador", currentWorld = "Mundo1", currentMode = "survival";
+        let score = 0, hp = 100, days = 1, activeBlock = "stone";
+        let inventory = { stone: 20, wood: 20, gold: 10 };
 
-<script>
-const firebaseConfig = {
-apiKey: "AIzaSyBDE_6jIBeW-xAbPF7FWLsUlEDv4toHmVk",
-authDomain: "azteccraft-80bc2.firebaseapp.com",
-databaseURL: "https://azteccraft-80bc2-default-rtdb.firebaseio.com",
-projectId: "azteccraft-80bc2",
-storageBucket: "azteccraft-80bc2.firebasestorage.app",
-messagingSenderId: "854761490277",
-appId: "1:854761490277:web:a04e46bc093a6b5d64c38c"
-};
+        const esquemas = {
+            chinampa: { req: "4 Madera, 4 Pasto", bonus: 50 },
+            altar: { req: "8 Piedra, 1 Oro", bonus: 150 },
+            calzada: { req: "12 Piedra, 6 Madera", bonus: 250 },
+            piramide_chica: { req: "16 Piedra, 4 Oro", bonus: 400 },
+            pelota: { req: "24 Piedra, 8 Madera", bonus: 700 },
+            quetzalcoatl: { req: "28 Piedra, 6 Oro, 4 Madera", bonus: 950 },
+            templo_mayor: { req: "36 Piedra, 12 Madera, 9 Oro", bonus: 1200 },
+            palacio: { req: "50 Piedra, 20 Madera, 15 Oro", bonus: 2500 }
+        };
 
-let db = null;
-try {
-if (typeof firebase !== 'undefined') {
-firebase.initializeApp(firebaseConfig);
-db = firebase.database();
-}
-} catch(e) {
-console.warn("Firebase no disponible en este momento:", e);
-}
+        function cambiarEsquema() {
+            const val = document.getElementById('select-schema').value;
+            document.getElementById('schema-info').innerText = "Req: " + esquemas[val].req;
+        }
 
-let currentUser = "", currentWorld = "", currentMode = "survival";
-let score = 0, hp = 100, days = 1, activeBlock = "stone";
-let inventory = { stone: 20, wood: 20, gold: 10 };
+        // Renderizado 3D
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87ceeb);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-const esquemas = {
-chinampa: { req: "4 Madera, 4 Pasto", bonus: 50 },
-altar: { req: "8 Piedra, 1 Oro", bonus: 150 },
-calzada: { req: "12 Piedra, 6 Madera", bonus: 250 },
-piramide_chica: { req: "16 Piedra, 4 Oro", bonus: 400 },
-pelota: { req: "24 Piedra, 8 Madera", bonus: 700 },
-quetzalcoatl: { req: "28 Piedra, 6 Oro, 4 Madera", bonus: 950 },
-templo_mayor: { req: "36 Piedra, 12 Madera, 9 Oro", bonus: 1200 },
-palacio: { req: "50 Piedra, 20 Madera, 15 Oro", bonus: 2500 }
-};
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 20, 10).normalize();
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
 
-function cambiarEsquema() {
-const val = document.getElementById('select-schema').value;
-document.getElementById('schema-info').innerText = "Req: " + esquemas[val].req;
-}
+        const materials = {
+            grass: new THREE.MeshLambertMaterial({ color: 0x3a5f0b }),
+            stone: new THREE.MeshLambertMaterial({ color: 0x7d7d7d }),
+            wood: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
+            gold: new THREE.MeshLambertMaterial({ color: 0xd4af37 })
+        };
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const blocks = [];
 
-// Configuración de la escena Three.js
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+        for (let x = -5; x <= 5; x++) {
+            for (let z = -5; z <= 5; z++) {
+                const b = new THREE.Mesh(geometry, materials.grass);
+                b.position.set(x, 0, z);
+                scene.add(b);
+                blocks.push(b);
+            }
+        }
+        camera.position.set(0, 4, 8);
+        camera.lookAt(0, 0, 0);
 
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 20, 10).normalize();
-scene.add(light);
-scene.add(new THREE.AmbientLight(0x404040));
+        function ingresarAlJuego() {
+            const u = document.getElementById('username').value.trim();
+            const w = document.getElementById('world-name').value.trim();
+            
+            if (u) currentUser = u;
+            if (w) currentWorld = w;
+            currentMode = document.getElementById('mode-select').value;
 
-const materials = {
-grass: new THREE.MeshLambertMaterial({ color: 0x3a5f0b }),
-stone: new THREE.MeshLambertMaterial({ color: 0x7d7d7d }),
-wood: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
-gold: new THREE.MeshLambertMaterial({ color: 0xd4af37 })
-};
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-const blocks = [];
+            document.getElementById('hud-user').innerText = currentUser;
+            document.getElementById('hud-world').innerText = currentWorld;
+            document.getElementById('hud-mode').innerText = currentMode.toUpperCase();
+            
+            // Ocultar modal de inmediato (Garantizado)
+            document.getElementById('login-modal').style.display = 'none';
 
-for (let x = -5; x <= 5; x++) {
-for (let z = -5; z <= 5; z++) {
-const b = new THREE.Mesh(geometry, materials.grass);
-b.position.set(x, 0, z);
-scene.add(b);
-blocks.push(b);
-}
-}
-camera.position.set(0, 4, 8);
-camera.lookAt(0, 0, 0);
+            actualizarInventarioUI();
 
-// Vinculación directa mediante event listener para asegurar la ejecución
-document.getElementById('btn-entrar').addEventListener('click', function() {
-const user = document.getElementById('username').value.trim();
-const pin = document.getElementById('userpin').value.trim();
-const world = document.getElementById('world-name').value.trim();
-currentMode = document.getElementById('mode-select').value;
+            // Sincronizar Firebase
+            if (db) {
+                try {
+                    const ref = db.ref(`jugadores/${currentUser}/mundos/${currentWorld}`);
+                    ref.once('value').then(snap => {
+                        const val = snap.val();
+                        if (val) {
+                            score = val.score || 0;
+                            days = val.days || 1;
+                            document.getElementById('hud-score').innerText = score;
+                            document.getElementById('hud-days').innerText = days;
+                        } else {
+                            ref.set({ modo: currentMode, score: 0, days: 1 });
+                        }
+                    }).catch(err => console.log(err));
+                } catch(e) { console.log(e); }
+            }
+        }
 
-if (!user || !pin || !world) {
-alert("Por favor completa Nombre, PIN y Mundo.");
-return;
-}
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
 
-currentUser = user;
-currentWorld = world;
+        function colocarBloque(clientX, clientY) {
+            if (document.getElementById('login-modal').style.display !== 'none') return;
+            if (inventory[activeBlock] <= 0) return;
 
-document.getElementById('hud-user').innerText = currentUser;
-document.getElementById('hud-world').innerText = currentWorld;
-document.getElementById('hud-mode').innerText = currentMode.toUpperCase();
+            if (clientX === undefined || clientY === undefined) {
+                mouse.x = 0; mouse.y = 0;
+            } else {
+                mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            }
 
-// Ocultar modal obligatoriamente
-document.getElementById('login-modal').style.display = 'none';
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(blocks);
 
-actualizarInventarioUI();
+            if (intersects.length > 0) {
+                const intersect = intersects[0];
+                const newBlock = new THREE.Mesh(geometry, materials[activeBlock]);
+                newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
+                
+                scene.add(newBlock);
+                blocks.push(newBlock);
 
-// Intento de conexión asíncrono
-if (db) {
-try {
-const worldRef = db.ref(jugadores/${currentUser}/mundos/${currentWorld});
-worldRef.once('value').then((snapshot) => {
-const data = snapshot.val();
-if (data) {
-score = data.score || 0;
-days = data.days || 1;
-document.getElementById('hud-score').innerText = score;
-document.getElementById('hud-days').innerText = days;
-} else {
-worldRef.set({ modo: currentMode, score: 0, days: 1, creado: new Date().toISOString() });
-}
-}).catch(e => console.warn(e));
-} catch(e) {
-console.warn(e);
-}
-}
-});
+                inventory[activeBlock]--;
+                score += (activeBlock === 'gold' ? 25 : 10);
+                
+                document.getElementById('hud-score').innerText = score;
+                actualizarInventarioUI();
+                guardarEnNube();
+            }
+        }
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+        window.addEventListener('pointerdown', (e) => {
+            // Evitar colocar bloque si toca sobre paneles del HUD
+            if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || e.target.closest('#inventory') || e.target.closest('#schematic-panel')) return;
+            colocarBloque(e.clientX, e.clientY);
+        });
 
-function colocarBloque(clientX, clientY) {
-if (document.getElementById('login-modal').style.display !== 'none') return;
-if (inventory[activeBlock] <= 0) return;
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '1') selectSlot('stone');
+            if (e.key === '2') selectSlot('wood');
+            if (e.key === '3') selectSlot('gold');
+        });
 
-if (clientX === undefined || clientY === undefined) {
-mouse.x = 0;
-mouse.y = 0;
-} else {
-mouse.x = (clientX / window.innerWidth) * 2 - 1;
-mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-}
+        let lastButtonPressed = false;
 
-raycaster.setFromCamera(mouse, camera);
-const intersects = raycaster.intersectObjects(blocks);
+        window.addEventListener("gamepadconnected", (e) => {
+            document.getElementById('gamepad-status').innerText = "🎮 Joystick: Conectado (" + e.gamepad.id.substring(0, 10) + "...)";
+        });
 
-if (intersects.length > 0) {
-const intersect = intersects[0];
-const newBlock = new THREE.Mesh(geometry, materials[activeBlock]);
-newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
+        window.addEventListener("gamepaddisconnected", () => {
+            document.getElementById('gamepad-status').innerText = "🎮 Joystick: No detectado";
+        });
 
-scene.add(newBlock);
-blocks.push(newBlock);
+        function pollGamepad() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            if (gamepads[0]) {
+                const gp = gamepads[0];
+                if (gp.buttons[0].pressed) {
+                    if (!lastButtonPressed) {
+                        colocarBloque();
+                        lastButtonPressed = true;
+                    }
+                } else {
+                    lastButtonPressed = false;
+                }
+                if (gp.buttons[4].pressed) selectSlot('stone');
+                if (gp.buttons[5].pressed) selectSlot('wood');
+            }
+        }
 
-inventory[activeBlock]--;
-score += (activeBlock === 'gold' ? 25 : 10);
+        function guardarEnNube() {
+            if (db && currentUser && currentWorld) {
+                try {
+                    db.ref(`jugadores/${currentUser}/mundos/${currentWorld}`).update({ score: score, days: days });
+                    
+                    const tabla = currentMode === 'survival' ? 'ranking_supervivencia' : 'ranking_hardcore';
+                    db.ref(`${tabla}/${currentUser}_${currentWorld}`).set({
+                        jugador: currentUser,
+                        mundo: currentWorld,
+                        score: score,
+                        dias: days
+                    });
+                } catch(e) { console.log(e); }
+            }
+        }
 
-document.getElementById('hud-score').innerText = score;
-actualizarInventarioUI();
-guardarEnNube();
-}
-}
+        function selectSlot(type) {
+            activeBlock = type;
+            document.querySelectorAll('.slot').forEach(el => el.classList.remove('selected'));
+            document.getElementById('slot-' + type).classList.add('selected');
+        }
 
-window.addEventListener('pointerdown', (e) => {
-colocarBloque(e.clientX, e.clientY);
-});
+        function actualizarInventarioUI() {
+            document.getElementById('cnt-stone').innerText = inventory.stone;
+            document.getElementById('cnt-wood').innerText = inventory.wood;
+            document.getElementById('cnt-gold').innerText = inventory.gold;
+        }
 
-window.addEventListener('keydown', (e) => {
-if (e.key === '1') selectSlot('stone');
-if (e.key === '2') selectSlot('wood');
-if (e.key === '3') selectSlot('gold');
-});
+        function revivir() {
+            if (currentMode === 'hardcore') {
+                location.reload();
+            } else {
+                hp = 100;
+                document.getElementById('hud-hp').innerText = hp;
+                document.getElementById('mictlan-overlay').style.display = 'none';
+            }
+        }
 
-let lastButtonPressed = false;
-
-window.addEventListener("gamepadconnected", (e) => {
-document.getElementById('gamepad-status').innerText = "🎮 Joystick: Conectado (" + e.gamepad.id.substring(0, 12) + "...)";
-});
-
-window.addEventListener("gamepaddisconnected", () => {
-document.getElementById('gamepad-status').innerText = "🎮 Joystick: No detectado";
-});
-
-function pollGamepad() {
-const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-if (gamepads[0]) {
-const gp = gamepads[0];
-if (gp.buttons[0].pressed) {
-if (!lastButtonPressed) {
-colocarBloque();
-lastButtonPressed = true;
-}
-} else {
-lastButtonPressed = false;
-}
-if (gp.buttons[4].pressed) selectSlot('stone');
-if (gp.buttons[5].pressed) selectSlot('wood');
-}
-}
-
-function guardarEnNube() {
-if (db && currentUser && currentWorld) {
-try {
-db.ref(jugadores/${currentUser}/mundos/${currentWorld}).update({ score: score, days: days });
-
-const tabla = currentMode === 'survival' ? 'ranking_supervivencia' : 'ranking_hardcore';
-db.ref(${tabla}/${currentUser}_${currentWorld}).set({
-jugador: currentUser,
-mundo: currentWorld,
-score: score,
-dias: days
-});
-} catch(e) {
-console.warn("Error guardando datos:", e);
-}
-}
-}
-
-function selectSlot(type) {
-activeBlock = type;
-document.querySelectorAll('.slot').forEach(el => el.classList.remove('selected'));
-document.getElementById('slot-' + type).classList.add('selected');
-}
-
-function actualizarInventarioUI() {
-document.getElementById('cnt-stone').innerText = inventory.stone;
-document.getElementById('cnt-wood').innerText = inventory.wood;
-document.getElementById('cnt-gold').innerText = inventory.gold;
-}
-
-function revivir() {
-if (currentMode === 'hardcore') {
-location.reload();
-} else {
-hp = 100;
-document.getElementById('hud-hp').innerText = hp;
-document.getElementById('mictlan-overlay').style.display = 'none';
-}
-}
-
-function animate() {
-requestAnimationFrame(animate);
-pollGamepad();
-scene.rotation.y += 0.001;
-renderer.render(scene, camera);
-}
-animate();
-</script>
+        function animate() {
+            requestAnimationFrame(animate);
+            pollGamepad();
+            scene.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
 </body>
 </html>
