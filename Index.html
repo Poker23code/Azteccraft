@@ -3,86 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Imperio Azteca: Minijuegos Tradicionales</title>
+    <title>Escape de Tenochtitlan 3D</title>
     <style>
-        * { box-sizing: border-box; touch-action: manipulation; user-select: none; }
-        body { margin: 0; padding: 0; background: #111; color: white; font-family: 'Segoe UI', Arial, sans-serif; text-align: center; overflow: hidden; }
+        * { box-sizing: border-box; touch-action: manipulation; user-select: none; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Arial, sans-serif; color: white; }
         
-        .screen { display: none; width: 100vw; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 15px; position: absolute; top: 0; left: 0; background: #1a1a1a; }
-        .active { display: flex; }
+        canvas { width: 100% !important; height: 100% !important; display: block; }
 
-        h1 { color: #ffd700; margin-bottom: 5px; font-size: 24px; }
-        p { color: #ccc; font-size: 13px; max-width: 400px; margin: 5px 0 15px 0; }
+        /* Capas de Interfaz (UI) */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; background: rgba(0,0,0,0.85); }
+        .card { background: #1c1917; border: 2px solid #eab308; padding: 25px; border-radius: 12px; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+        
+        h1 { color: #facc15; font-size: 24px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        p { color: #a1a1aa; font-size: 13px; margin-bottom: 15px; }
 
-        .btn { background: #d9534f; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; width: 80%; max-width: 300px; }
-        .btn-green { background: #2ecc71; }
-        .btn-blue { background: #3498db; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #444; background: #27272a; color: white; font-size: 15px; text-align: center; }
+        .btn { width: 100%; padding: 12px; background: #eab308; color: #000; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
 
-        input { padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #555; background: #222; color: white; margin-bottom: 15px; width: 80%; max-width: 300px; text-align: center; }
+        /* HUD durante el juego */
+        #hud { position: absolute; top: 15px; left: 15px; z-index: 5; font-size: 16px; font-weight: bold; text-shadow: 2px 2px 4px #000; pointer-events: none; }
+        #controls-hint { position: absolute; bottom: 15px; width: 100%; text-align: center; z-index: 5; font-size: 12px; color: #facc15; pointer-events: none; text-shadow: 1px 1px 3px #000; }
 
-        /* Contenedor Canvas */
-        canvas { background: #222; border: 2px solid #ffd700; border-radius: 8px; max-width: 100%; max-height: 60vh; }
-
-        /* Estilos Chinampas */
-        .grid-chinampas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; width: 90%; max-width: 320px; }
-        .plot { background: #3e2723; border: 2px solid #8d6e63; height: 90px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
-        .plot.watered { border-color: #29b6f6; background: #4e342e; }
-
-        /* Leaderboard */
-        .leaderboard-list { width: 90%; max-width: 350px; background: #222; border: 1px solid #444; border-radius: 8px; padding: 10px; margin: 10px 0; max-height: 200px; overflow-y: auto; text-align: left; }
-        .lb-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; font-size: 13px; }
+        /* Tabla de Posiciones */
+        .leaderboard-box { background: #27272a; border-radius: 8px; padding: 10px; margin-top: 10px; max-height: 150px; overflow-y: auto; text-align: left; border: 1px solid #444; }
+        .lb-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid #3f3f46; }
     </style>
 
-    <!-- SDK Firebase Base -->
+    <!-- Motor 3D Three.js + Firebase -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
-    <!-- PANTALLA 1: REGISTRO DE JUGADOR -->
-    <div id="screen-login" class="screen active">
-        <h1>🗿 Imperio Azteca</h1>
-        <p>Seleccioná tu minijuego y demostrá tus habilidades para registrar tu puntaje en la tabla general.</p>
-        <input type="text" id="player-name" placeholder="Tu Apodo / Nombre" maxlength="12">
-        <button class="btn btn-green" onclick="irASeleccion('runner')">🏃 El Mensajero Paynal</button>
-        <button class="btn btn-blue" onclick="irASeleccion('chinampas')">🌽 Cultivo en Texcoco</button>
-    </div>
-
-    <!-- PANTALLA 2: MINIJUEGO RUNNER (EL MENSAJERO) -->
-    <div id="screen-runner" class="screen">
-        <div style="font-size: 14px; margin-bottom: 5px;">Puntos: <b id="runner-score" style="color:#ffd700;">0</b></div>
-        <canvas id="runnerCanvas" width="360" height="200"></canvas>
-        <p style="font-size: 11px; margin-top: 5px;">Tocá la pantalla para saltar los obstáculos en el camino a Tenochtitlan.</p>
-        <button class="btn" style="width: auto; padding: 8px 16px; font-size: 12px;" onclick="saltarRunner()">SALTAR</button>
-    </div>
-
-    <!-- PANTALLA 3: MINIJUEGO CHINAMPAS (TEXCOCO) -->
-    <div id="screen-chinampas" class="screen">
-        <div style="font-size: 14px;">Tiempo: <b id="chinampa-timer" style="color:#e74c3c;">20</b>s | Maíz: <b id="chinampa-score" style="color:#ffd700;">0</b></div>
-        <p style="font-size: 11px; margin: 5px 0;">Tocá las parcelas para regar y cosechar maíz antes de que venza el tiempo.</p>
-        <div class="grid-chinampas">
-            <div class="plot" onclick="interactuarChinampa(0)" id="plot-0">Seco 🌵</div>
-            <div class="plot" onclick="interactuarChinampa(1)" id="plot-1">Seco 🌵</div>
-            <div class="plot" onclick="interactuarChinampa(2)" id="plot-2">Seco 🌵</div>
-            <div class="plot" onclick="interactuarChinampa(3)" id="plot-3">Seco 🌵</div>
+    <!-- PANTALLA INICIAL DE INGRESO -->
+    <div id="screen-start" class="overlay">
+        <div class="card">
+            <h1>🗿 Tenochtitlan 3D</h1>
+            <p>Runner en tercera persona. Esquiá los obstáculos de la calzada azteca y alcanzá el máximo puntaje.</p>
+            <input type="text" id="player-name" placeholder="Tu Nombre / Apodo" maxlength="12">
+            <button class="btn" onclick="iniciarJuego()">¡EMPEZAR A CORRER!</button>
         </div>
     </div>
 
-    <!-- PANTALLA 4: RESULTADOS Y TABLA DE LÍDERES -->
-    <div id="screen-gameover" class="screen">
-        <h1>🏆 Fin de la Partida</h1>
-        <p id="gameover-text">Obtuviste 0 puntos.</p>
-        
-        <div style="font-size: 14px; font-weight: bold; color: #ffd700; margin-top: 5px;">Tabla de Clasificación</div>
-        <div class="leaderboard-list" id="lb-content">
-            <div class="lb-item"><span>Cargando...</span></div>
-        </div>
+    <!-- HUD EN TIEMPO REAL -->
+    <div id="hud" style="display:none;">
+        🏃 Puntos: <span id="score-txt" style="color:#facc15;">0</span> m
+    </div>
+    <div id="controls-hint" style="display:none;">
+        📱 Deslizá o usá las flechas (◀ ▶) para cambiar de carril | Arriba (▲) para saltar
+    </div>
 
-        <button class="btn btn-green" onclick="volverAlMenu()">Volver al Inicio</button>
+    <!-- PANTALLA GAME OVER + LEADERBOARD -->
+    <div id="screen-gameover" class="overlay" style="display:none;">
+        <div class="card">
+            <h1 style="color:#ef4444;">¡FIN DEL ESCAPE!</h1>
+            <p>Distancia recorrida: <b id="final-score" style="color:#facc15; font-size: 18px;">0</b> metros</p>
+            
+            <div style="font-size: 13px; color:#ddd; font-weight:bold;">🏆 Mejores Corredores</div>
+            <div class="leaderboard-box" id="lb-content">
+                <div class="lb-row">Cargando puntuaciones...</div>
+            </div>
+
+            <button class="btn" onclick="reiniciarJuego()">Volver a Intentar</button>
+        </div>
     </div>
 
     <script>
-        // Configuración de Firebase Base
+        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBDE_6jIBeW-xAbPF7FWLsUlEDv4toHmVk",
             authDomain: "azteccraft-80bc2.firebaseapp.com",
@@ -92,203 +81,270 @@
         let db = null;
         try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e){}
 
-        let playerName = "Jugador";
-        let currentGame = "";
-        let finalScore = 0;
+        // --- VARIABLES DE JUEGO ---
+        let playerName = "Guerrero";
+        let isPlaying = false;
+        let score = 0;
+        let speed = 0.25;
+        let lane = 1; // 0: Izquierda, 1: Centro, 2: Derecha
+        const laneX = [-2.2, 0, 2.2];
 
-        function cambiarPantalla(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        // --- ESCENA Y GRÁFICOS 3D (THREE.JS) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x05050a); // Noche azteca
+        scene.fog = new THREE.FogExp2(0x05050a, 0.025); // Niebla atmosférica
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Iluminación
+        const ambientLight = new THREE.AmbientLight(0x333355, 0.8);
+        scene.add(ambientLight);
+
+        const moonLight = new THREE.DirectionalLight(0x99ccff, 1.2);
+        moonLight.position.set(10, 20, 10);
+        moonLight.castShadow = true;
+        scene.add(moonLight);
+
+        // --- MODELADO 3D (JUGADOR Y ESCENARIO) ---
+        // Jugador (Guerrero Azteca)
+        const playerGroup = new THREE.Group();
+        const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 }); // Tono piel/armadura
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        playerGroup.add(body);
+
+        // Casco de Plumas del Guerrero
+        const helmGeo = new THREE.ConeGeometry(0.5, 0.8, 5);
+        const helmMat = new THREE.MeshStandardMaterial({ color: 0x16a34a }); // Plumas verdes
+        const helm = new THREE.Mesh(helmGeo, helmMat);
+        helm.position.set(0, 1.5, 0);
+        playerGroup.add(helm);
+
+        scene.add(playerGroup);
+
+        // Pasarela Azteca (Camino)
+        const trackSegments = [];
+        const segmentGeo = new THREE.BoxGeometry(7, 0.5, 20);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x44403c, roughness: 0.8 }); // Piedra azteca
+
+        for(let i = 0; i < 5; i++) {
+            const seg = new THREE.Mesh(segmentGeo, trackMat);
+            seg.position.z = -i * 20;
+            seg.receiveShadow = true;
+            scene.add(seg);
+            trackSegments.push(seg);
+
+            // Antorchas en los laterales con luz naranja real
+            const torchLight = new THREE.PointLight(0xf97316, 2, 8);
+            torchLight.position.set(3.6, 1.5, -i * 20);
+            scene.add(torchLight);
         }
 
-        function irASeleccion(juego) {
-            const input = document.getElementById('player-name').value.trim();
-            if (input) playerName = input;
-            currentGame = juego;
+        // Obstáculos (Tótems y Rocas Sagradas)
+        const obstacles = [];
+        const obsGeo = new THREE.BoxGeometry(1.2, 1.8, 1.2);
+        const obsMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.2, metalness: 0.5 });
 
-            if (juego === 'runner') {
-                cambiarPantalla('screen-runner');
-                iniciarRunner();
-            } else if (juego === 'chinampas') {
-                cambiarPantalla('screen-chinampas');
-                iniciarChinampas();
+        function crearObstaculo(zPos) {
+            const obs = new THREE.Mesh(obsGeo, obsMat);
+            const rLane = Math.floor(Math.random() * 3);
+            obs.position.set(laneX[rLane], 0.9, zPos);
+            obs.castShadow = true;
+            scene.add(obs);
+            obstacles.push(obs);
+        }
+
+        for(let z = -20; z > -100; z -= 15) {
+            crearObstaculo(z);
+        }
+
+        // --- CONTROLES Y FÍSICAS ---
+        let playerY = 0;
+        let velocityY = 0;
+        let isJumping = false;
+
+        function MoverIzquierda() { if (lane > 0) lane--; }
+        function MoverDerecha() { if (lane < 2) lane++; }
+        function Saltar() { if (!isJumping) { velocityY = 0.2; isJumping = true; } }
+
+        // Teclado
+        window.addEventListener('keydown', (e) => {
+            if (!isPlaying) return;
+            if (e.key === 'ArrowLeft' || e.key === 'a') MoverIzquierda();
+            if (e.key === 'ArrowRight' || e.key === 'd') MoverDerecha();
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === ' ') Saltar();
+        });
+
+        // Controles Táctiles (Swipe en Celular)
+        let touchX = 0, touchY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchX = e.touches[0].clientX;
+            touchY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isPlaying) return;
+            let dx = e.changedTouches[0].clientX - touchX;
+            let dy = e.changedTouches[0].clientY - touchY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 30) MoverDerecha();
+                else if (dx < -30) MoverIzquierda();
+            } else {
+                if (dy < -30) Saltar();
             }
+        });
+
+        // Redimensionamiento de Pantalla
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- LÓGICA DE JUEGO ---
+        function iniciarJuego() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (nameInput) playerName = nameInput;
+
+            document.getElementById('screen-start').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('controls-hint').style.display = 'block';
+
+            score = 0;
+            speed = 0.28;
+            lane = 1;
+            playerGroup.position.set(0, 0, 0);
+
+            // Reubicar obstáculos
+            obstacles.forEach((obs, idx) => {
+                obs.position.z = -20 - (idx * 15);
+                obs.position.x = laneX[Math.floor(Math.random() * 3)];
+            });
+
+            isPlaying = true;
         }
 
-        /* --------------------------------------------------
-           LÓGICA MINIJUEGO 1: RUNNER (EL MENSAJERO)
-        -------------------------------------------------- */
-        let runnerCanvas = document.getElementById('runnerCanvas');
-        let ctx = runnerCanvas.getContext('2d');
-        let runnerLoop = null;
-        let pY = 140, pVY = 0, isJumping = false;
-        let obstacleX = 360, rScore = 0, rSpeed = 4;
+        function gameOver() {
+            isPlaying = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('controls-hint').style.display = 'none';
+            document.getElementById('final-score').innerText = Math.floor(score);
+            document.getElementById('screen-gameover').style.display = 'flex';
 
-        function iniciarRunner() {
-            pY = 140; pVY = 0; isJumping = false;
-            obstacleX = 360; rScore = 0; rSpeed = 4;
-            document.getElementById('runner-score').innerText = '0';
-            
-            if (runnerLoop) clearInterval(runnerLoop);
-            runnerLoop = setInterval(loopRunner, 1000 / 60);
-        }
-
-        function saltarRunner() {
-            if (!isJumping) { pVY = -10; isJumping = true; }
-        }
-
-        runnerCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); saltarRunner(); });
-
-        function loopRunner() {
-            // Físicas
-            pY += pVY;
-            pVY += 0.5; // Gravedad
-            if (pY >= 140) { pY = 140; pVY = 0; isJumping = false; }
-
-            // Obstáculo
-            obstacleX -= rSpeed;
-            if (obstacleX < -20) {
-                obstacleX = 360 + Math.random() * 80;
-                rScore += 10;
-                rSpeed += 0.2;
-                document.getElementById('runner-score').innerText = rScore;
-            }
-
-            // Colisión
-            if (obstacleX < 50 && obstacleX > 20 && pY > 110) {
-                clearInterval(runnerLoop);
-                finalizarJuego(rScore);
-            }
-
-            // Dibujar
-            ctx.clearRect(0, 0, 360, 200);
-            
-            // Suelo
-            ctx.fillStyle = "#8d6e63";
-            ctx.fillRect(0, 170, 360, 30);
-
-            // Mensajero (Jugador)
-            ctx.fillStyle = "#ffd700";
-            ctx.fillRect(30, pY, 20, 30);
-
-            // Obstáculo (Roca / Cactaceas)
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(obstacleX, 140, 20, 30);
-        }
-
-        /* --------------------------------------------------
-           LÓGICA MINIJUEGO 2: ADMINISTRAR CHINAMPAS
-        -------------------------------------------------- */
-        let plots = [0, 0, 0, 0]; // 0: Seco, 1: Regado, 2: Listo Cosecha
-        let cScore = 0, cTime = 20, chinampaTimer = null;
-
-        function iniciarChinampas() {
-            plots = [0, 0, 0, 0];
-            cScore = 0; cTime = 20;
-            document.getElementById('chinampa-score').innerText = '0';
-            document.getElementById('chinampa-timer').innerText = '20';
-            actualizarPlotsUI();
-
-            if (chinampaTimer) clearInterval(chinampaTimer);
-            chinampaTimer = setInterval(() => {
-                cTime--;
-                document.getElementById('chinampa-timer').innerText = cTime;
-                
-                // Cambio aleatorio de estado de parcelas
-                if (Math.random() < 0.4) {
-                    let idx = Math.floor(Math.random() * 4);
-                    if (plots[idx] === 1) plots[idx] = 2; // Crece Maíz
-                }
-                actualizarPlotsUI();
-
-                if (cTime <= 0) {
-                    clearInterval(chinampaTimer);
-                    finalizarJuego(cScore);
-                }
-            }, 1000);
-        }
-
-        function interactuarChinampa(idx) {
-            if (plots[idx] === 0) {
-                plots[idx] = 1; // Regar
-            } else if (plots[idx] === 2) {
-                plots[idx] = 0; // Cosechar
-                cScore += 15;
-                document.getElementById('chinampa-score').innerText = cScore;
-            }
-            actualizarPlotsUI();
-        }
-
-        function actualizarPlotsUI() {
-            for (let i = 0; i < 4; i++) {
-                let el = document.getElementById('plot-' + i);
-                if (plots[i] === 0) {
-                    el.innerText = "Seco 🌵\n(Toca para regar)";
-                    el.style.background = "#3e2723";
-                } else if (plots[i] === 1) {
-                    el.innerText = "Regado 💧\n(Creciendo...)";
-                    el.style.background = "#1b5e20";
-                } else if (plots[i] === 2) {
-                    el.innerText = "🌽 LISTO 🌽\n(Toca para cosechar)";
-                    el.style.background = "#fbc02d";
-                    el.style.color = "#000";
-                }
-            }
-        }
-
-        /* --------------------------------------------------
-           SISTEMA DE PUNTAJES Y LEADERBOARD (FIREBASE)
-        -------------------------------------------------- */
-        function finalizarJuego(pts) {
-            finalScore = pts;
-            document.getElementById('gameover-text').innerText = `${playerName}, lograste un puntaje de ${finalScore} en ${currentGame === 'runner' ? 'El Mensajero' : 'Texcoco'}.`;
-            cambiarPantalla('screen-gameover');
-            
-            guardarPuntajeFirebase();
+            guardarPuntajeFirebase(Math.floor(score));
             cargarLeaderboard();
         }
 
-        function guardarPuntajeFirebase() {
+        function reiniciarJuego() {
+            document.getElementById('screen-gameover').style.display = 'none';
+            iniciarJuego();
+        }
+
+        // --- BUCLE PRINCIPAL (ANIMACIÓN 60 FPS) ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                // Aumento progresivo de puntuación y velocidad
+                score += speed;
+                speed += 0.00005;
+                document.getElementById('score-txt').innerText = Math.floor(score);
+
+                // Movimiento suave del jugador hacia el carril objetivo
+                playerGroup.position.x += (laneX[lane] - playerGroup.position.x) * 0.2;
+
+                // Salto y Gravedad
+                if (isJumping) {
+                    playerY += velocityY;
+                    velocityY -= 0.012; // Gravedad
+                    if (playerY <= 0) {
+                        playerY = 0;
+                        isJumping = false;
+                    }
+                    playerGroup.position.y = playerY;
+                }
+
+                // Mover terreno infinitamente hacia atrás
+                trackSegments.forEach(seg => {
+                    seg.position.z += speed;
+                    if (seg.position.z > 10) {
+                        seg.position.z -= 100;
+                    }
+                });
+
+                // Mover y verificar colisión de obstáculos
+                obstacles.forEach(obs => {
+                    obs.position.z += speed;
+
+                    // Detectar Colisión
+                    const distZ = Math.abs(obs.position.z - playerGroup.position.z);
+                    const distX = Math.abs(obs.position.x - playerGroup.position.x);
+
+                    if (distZ < 0.8 && distX < 0.8 && playerGroup.position.y < 1.0) {
+                        gameOver();
+                    }
+
+                    // Reciclar obstáculo cuando sobrepasa la cámara
+                    if (obs.position.z > 5) {
+                        obs.position.z = -90;
+                        obs.position.x = laneX[Math.floor(Math.random() * 3)];
+                    }
+                });
+
+                // Posición de la Cámara estilo Subway Surfers
+                camera.position.set(playerGroup.position.x * 0.3, playerGroup.position.y + 3.5, playerGroup.position.z + 5);
+                camera.lookAt(playerGroup.position.x * 0.5, playerGroup.position.y + 1, playerGroup.position.z - 5);
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- SISTEMA DE LEADERBOARD (FIREBASE) ---
+        function guardarPuntajeFirebase(pts) {
             if (!db) return;
-            let refPath = db.ref('leaderboard/' + currentGame);
-            refPath.push({
+            db.ref('leaderboard/runner3d').push({
                 nombre: playerName,
-                puntos: finalScore,
+                puntos: pts,
                 fecha: new Date().toISOString()
             });
         }
 
         function cargarLeaderboard() {
-            let container = document.getElementById('lb-content');
-            container.innerHTML = '<div class="lb-item"><span>Cargando datos...</span></div>';
+            const container = document.getElementById('lb-content');
+            container.innerHTML = '<div class="lb-row">Cargando...</div>';
 
             if (!db) {
-                container.innerHTML = '<div class="lb-item"><span>Modo Sin Conexión</span></div>';
+                container.innerHTML = '<div class="lb-row">Puntaje guardado localmente</div>';
                 return;
             }
 
-            db.ref('leaderboard/' + currentGame).orderByChild('puntos').limitToLast(5).once('value', (snapshot) => {
+            db.ref('leaderboard/runner3d').orderByChild('puntos').limitToLast(5).once('value', (snapshot) => {
                 let data = [];
                 snapshot.forEach(child => { data.push(child.val()); });
-                data.reverse(); // De mayor a menor
+                data.reverse();
 
                 container.innerHTML = '';
                 if (data.length === 0) {
-                    container.innerHTML = '<div class="lb-item"><span>Sé el primero en anotar</span></div>';
+                    container.innerHTML = '<div class="lb-row">Sé el primero en la lista</div>';
                     return;
                 }
 
                 data.forEach((item, index) => {
                     let div = document.createElement('div');
-                    div.className = 'lb-item';
-                    div.innerHTML = `<span>#${index + 1} ${item.nombre}</span><b>${item.puntos} pts</b>`;
+                    div.className = 'lb-row';
+                    div.innerHTML = `<span>#${index + 1} ${item.nombre}</span><b>${item.puntos} m</b>`;
                     container.appendChild(div);
                 });
             });
-        }
-
-        function volverAlMenu() {
-            cambiarPantalla('screen-login');
         }
     </script>
 </body>
